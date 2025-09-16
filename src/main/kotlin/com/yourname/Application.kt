@@ -7,14 +7,12 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.ktor.server.websocket.*
 import io.ktor.websocket.*
-import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.cors.*
 import java.time.Duration
 
 fun Application.module() {
     install(CORS) {
         anyHost()
-        allowHeaders { true }
-        allowMethods { true }
     }
     
     install(WebSockets) {
@@ -50,6 +48,7 @@ fun main() {
     val port = System.getenv("PORT")?.toInt() ?: 8080
     println("Starting server on port $port")
     
-    embeddedServer(Netty, port = port, host = "0.0.0.0", module = Application::module)
-        .start(wait = true)
+    embeddedServer(Netty, port = port, host = "0.0.0.0") {
+        module()
+    }.start(wait = true)
 }
