@@ -1,36 +1,17 @@
-# Используем официальный образ Java 17
-FROM eclipse-temurin:17-jdk-alpine as builder
+FROM eclipse-temurin:17-jdk-alpine
 
-# Устанавливаем рабочую директорию
 WORKDIR /app
+COPY . .
 
-# Копируем сначала только файлы конфигурации для кэширования
-COPY build.gradle.kts settings.gradle.kts ./
+# Устанавливаем Gradle
+RUN apk add --no-cache wget unzip
+RUN wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip
+RUN unzip -q gradle-8.5-bin.zip
+RUN rm gradle-8.5-bin.zip
 
-# Копируем исходный код
-COPY src ./src
+# Собираем проект
+RUN ./gradle-8.5/bin/gradle shadowJar --no-daemon
 
-# Устанавливаем Gradle и собираем проект
-RUN apk add --no-cache bash
-RUN wget https://services.gradle.org/distributions/gradle-8.3-bin.zip -O gradle.zip
-RUN unzip gradle.zip
-RUN rm gradle.zip
-RUN mv gradle-8.3 gradle
-
-# Собираем JAR файл используя Gradle
-RUN ./gradle/bin/gradle shadowJar --no-daemon
-
-# Второй этап - минимальный образ
-FROM eclipse-temurin:17-jre-alpine
-
-# Устанавливаем рабочую директорию
-WORKDIR /app
-
-# Копируем собранный JAR из первого этапа
-COPY --from=builder /app/build/libs/messenger-server.jar .
-
-# Открываем порт
+# Запускаем сервер
 EXPOSE 8080
-
-# Команда запуска
-CMD ["java", "-jar", "messenger-server.jar"]
+CMD ["java", "-jar", "build/libs/messenger-server.jar"]
