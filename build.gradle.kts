@@ -1,9 +1,9 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.8.21"
+    kotlin("jvm") version "1.9.22"
     application
-    id("com.github.johnrengelman.shadow") version "7.1.2"
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.yourname"
@@ -14,13 +14,13 @@ repositories {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.2")
-    implementation("io.ktor:ktor-server-netty:2.3.2")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.2")
-    implementation("io.ktor:ktor-serialization-gson:2.3.2")
-    implementation("io.ktor:ktor-server-websockets:2.3.2")
-    implementation("io.ktor:ktor-server-cors:2.3.2")
-    implementation("ch.qos.logback:logback-classic:1.4.8")
+    implementation("io.ktor:ktor-server-core:2.3.7")
+    implementation("io.ktor:ktor-server-netty:2.3.7")
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.7")
+    implementation("io.ktor:ktor-serialization-gson:2.3.7")
+    implementation("io.ktor:ktor-server-websockets:2.3.7")
+    implementation("io.ktor:ktor-server-cors:2.3.7")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
 }
 
 tasks.withType<KotlinCompile> {
