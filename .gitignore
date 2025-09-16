@@ -1,0 +1,23 @@
+# Gradle
+.gradle/
+build/
+out/
+bin/
+
+# IDEA
+.idea/
+*.iml
+*.ipr
+*.iws
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
+
+# Docker
+docker-compose.yml
+.docker/
