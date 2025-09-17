@@ -1,27 +1,16 @@
-FROM eclipse-temurin:17-jdk-alpine
-
+# Build stage
+FROM eclipse-temurin:17-jdk-alpine as builder
 WORKDIR /app
 COPY . .
-
-# Устанавливаем необходимые пакеты
-RUN apk add --no-cache wget unzip
-
-# Скачиваем и устанавливаем Gradle
-RUN wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip && \
+RUN apk add --no-cache wget unzip && \
+    wget -q https://services.gradle.org/distributions/gradle-8.5-bin.zip && \
     unzip -q gradle-8.5-bin.zip && \
-    rm gradle-8.5-bin.zip
+    rm gradle-8.5-bin.zip && \
+    ./gradle-8.5/bin/gradle build -x test --no-daemon --no-build-cache
 
-# Даем права на выполнение
-RUN chmod +x ./gradle-8.5/bin/gradle
-
-# Копируем зависимости сначала для кэширования
-COPY build.gradle.kts settings.gradle.kts ./
-RUN ./gradle-8.5/bin/gradle dependencies --no-daemon
-
-# Копируем исходный код и собираем
-COPY src ./src
-RUN ./gradle-8.5/bin/gradle shadowJar --no-daemon --stacktrace
-
-# Запускаем сервер
+# Runtime stage
+FROM eclipse-temurin:17-jre-alpine
+WORKDIR /app
+COPY --from=builder /app/build/libs/messenger-server.jar .
 EXPOSE 8080
-CMD ["java", "-jar", "build/libs/messenger-server.jar"]
+CMD ["java", "-jar", "messenger-server.jar"]
