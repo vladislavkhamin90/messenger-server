@@ -72,8 +72,6 @@ object UserRepository {
 fun Application.module() {
     install(CORS) {
         anyHost()
-        allowHeaders { true }
-        allowMethods { true }
     }
 
     install(ContentNegotiation) {
@@ -153,7 +151,7 @@ fun Application.module() {
             val username = UserRepository.getUsernameByToken(token)
 
             if (username == null) {
-                call.respondText("Неавторизованный доступ", status = io.ktor.http.HttpStatusCode.Unauthorized)
+                call.respondText("Неавторизованный доступ")
             } else {
                 val users = UserRepository.getAllUsersExcept(username)
                 call.respond(users)
