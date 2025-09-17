@@ -21,6 +21,7 @@ dependencies {
     implementation("io.ktor:ktor-server-websockets:2.3.7")
     implementation("io.ktor:ktor-server-cors:2.3.7")
     implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("at.favre.lib:bcrypt:0.10.2")
 }
 
 tasks.withType<KotlinCompile> {
@@ -39,3 +40,4 @@ tasks {
         archiveFileName.set("messenger-server.jar")
     }
 }
+
