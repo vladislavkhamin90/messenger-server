@@ -1,6 +1,7 @@
 plugins {
     kotlin("jvm") version "1.9.0"
     application
+    id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
 group = "com.yourname.messenger"
@@ -25,18 +26,11 @@ application {
 }
 
 tasks {
-    // Простая задача для создания fat JAR
-    val fatJar by creating(Jar::class) {
+    shadowJar {
         archiveBaseName.set("messenger-server")
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-        
+        archiveVersion.set("")
         manifest {
-            attributes["Main-Class"] = application.mainClass.get()
+            attributes(Pair("Main-Class", "com.yourname.messenger.ApplicationKt"))
         }
-        
-        from(configurations.runtimeClasspath.get().map { 
-            if (it.isDirectory) it else zipTree(it) 
-        })
-        with(tasks["jar"] as CopySpec)
     }
 }
