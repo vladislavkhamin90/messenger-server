@@ -6,7 +6,7 @@ plugins {
     id("com.github.johnrengelman.shadow") version "8.1.1"
 }
 
-group = "com.yourname"
+group = "com.yourname.messenger"
 version = "1.0.0"
 
 repositories {
@@ -29,15 +29,14 @@ tasks.withType<KotlinCompile> {
 }
 
 application {
-    mainClass.set("com.yourname.ApplicationKt")
+    mainClass.set("com.yourname.messenger.ApplicationKt")
 }
 
 tasks {
     shadowJar {
         manifest {
-            attributes(Pair("Main-Class", "com.yourname.ApplicationKt"))
+            attributes(Pair("Main-Class", "com.yourname.messenger.ApplicationKt"))
         }
         archiveFileName.set("messenger-server.jar")
     }
 }
-
