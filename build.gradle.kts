@@ -25,21 +25,18 @@ application {
 }
 
 tasks {
-    val fatJar = task("fatJar", type = Jar::class) {
+    // Простая задача для создания fat JAR
+    val fatJar by creating(Jar::class) {
         archiveBaseName.set("messenger-server")
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
         
         manifest {
-            attributes["Main-Class"] = "com.yourname.messenger.ApplicationKt"
+            attributes["Main-Class"] = application.mainClass.get()
         }
         
         from(configurations.runtimeClasspath.get().map { 
             if (it.isDirectory) it else zipTree(it) 
         })
-        with(tasks.jar.get() as CopySpec)
-    }
-    
-    build {
-        dependsOn(fatJar)
+        with(tasks["jar"] as CopySpec)
     }
 }
