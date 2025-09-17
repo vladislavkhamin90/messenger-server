@@ -25,15 +25,21 @@ application {
 }
 
 tasks {
-    jar {
+    val fatJar = task("fatJar", type = Jar::class) {
+        archiveBaseName.set("messenger-server")
+        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        
         manifest {
-            attributes("Main-Class" to "com.yourname.messenger.ApplicationKt")
+            attributes["Main-Class"] = "com.yourname.messenger.ApplicationKt"
         }
         
         from(configurations.runtimeClasspath.get().map { 
             if (it.isDirectory) it else zipTree(it) 
         })
-        
-        duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+        with(tasks.jar.get() as CopySpec)
+    }
+    
+    build {
+        dependsOn(fatJar)
     }
 }
