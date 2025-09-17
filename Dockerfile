@@ -1,19 +1,19 @@
-# Используем официальный образ Gradle
+# Build stage
 FROM gradle:8.5-jdk17-alpine as builder
 
 WORKDIR /app
 COPY . .
 
-# Собираем проект
-RUN gradle build --no-daemon
+# Устанавливаем shadow plugin и собираем
+RUN gradle shadowJar --no-daemon
 
-# Создаем этап для запуска
+# Runtime stage
 FROM eclipse-temurin:17-jre-alpine
 
 WORKDIR /app
 
-# Копируем JAR файл (Gradle создает его с версией в имени)
-COPY --from=builder /app/build/libs/messenger-server-1.0.0.jar ./app.jar
+# Копируем JAR файл из builder stage
+COPY --from=builder /app/build/libs/messenger-server.jar .
 
 EXPOSE 8080
-CMD ["java", "-jar", "app.jar"]
+CMD ["java", "-jar", "messenger-server.jar"]
