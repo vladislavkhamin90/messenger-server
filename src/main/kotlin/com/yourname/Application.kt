@@ -1,36 +1,38 @@
-plugins {
-    application
-    kotlin("jvm") version "1.9.0"
-    id("io.ktor.plugin") version "2.3.6"
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.engine.*
+import io.ktor.server.netty.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.serialization.kotlinx.json.*
+import kotlinx.serialization.json.Json
+
+fun main() {
+    embeddedServer(Netty, port = System.getenv("PORT")?.toInt() ?: 8080, host = "0.0.0.0") {
+        configureRouting()
+        configureSerialization()
+        configureCORS()
+        configureDatabase()
+    }.start(wait = true)
 }
 
-group = "com.yourname"
-version = "1.0.0"
-
-application {
-    mainClass.set("com.yourname.messenger.ApplicationKt")
+fun Application.configureSerialization() {
+    install(ContentNegotiation) {
+        json(Json {
+            prettyPrint = true
+            isLenient = true
+        })
+    }
 }
 
-repositories {
-    mavenCentral()
-}
-
-dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.6")
-    implementation("io.ktor:ktor-server-netty:2.3.6")
-    implementation("io.ktor:ktor-server-cors:2.3.6")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.6")
-    implementation("io.ktor:ktor-serialization-gson:2.3.6")
-    implementation("io.ktor:ktor-server-websockets:2.3.6")
-    
-    implementation("ch.qos.logback:logback-classic:1.4.11")
-    
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
-    
-    testImplementation("io.ktor:ktor-server-test-host:2.3.6")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
-}
-
-kotlin {
-    jvmToolchain(17)
+fun Application.configureCORS() {
+    install(CORS) {
+        anyHost()
+        allowHeader(HttpHeaders.ContentType)
+        allowMethod(HttpMethod.Options)
+        allowMethod(HttpMethod.Post)
+        allowMethod(HttpMethod.Get)
+        allowMethod(HttpMethod.Put)
+        allowMethod(HttpMethod.Delete)
+    }
 }
