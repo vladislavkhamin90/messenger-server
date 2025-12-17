@@ -1,37 +1,30 @@
 plugins {
+    kotlin("jvm") version "1.9.22"
+    kotlin("plugin.serialization") version "1.9.22"
     application
-    kotlin("jvm") version "1.9.0"
-    id("io.ktor.plugin") version "2.3.6"
-    id("org.jetbrains.kotlin.plugin.serialization") version "1.9.0"
-}
-
-group = "com.yourname"
-version = "1.0.0"
-
-application {
-    mainClass.set("com.yourname.messenger.ApplicationKt")
-}
-
-repositories {
-    mavenCentral()
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-core:2.3.6")
-    implementation("io.ktor:ktor-server-netty:2.3.6")
-    implementation("io.ktor:ktor-server-cors:2.3.6")
-    implementation("io.ktor:ktor-server-content-negotiation:2.3.6")
-    implementation("io.ktor:ktor-serialization-gson:2.3.6")
-    implementation("io.ktor:ktor-server-websockets:2.3.6")
+    implementation("io.ktor:ktor-server-core:2.3.8")
+    implementation("io.ktor:ktor-server-netty:2.3.8")
+    implementation("io.ktor:ktor-server-content-negotiation:2.3.8")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.8")
+    implementation("io.ktor:ktor-server-cors:2.3.8")
+    implementation("io.ktor:ktor-server-auth:2.3.8")
+    implementation("io.ktor:ktor-server-auth-jwt:2.3.8")
     
-    implementation("ch.qos.logback:logback-classic:1.4.11")
+    // База данных
+    implementation("org.postgresql:postgresql:42.7.2")
+    implementation("org.jetbrains.exposed:exposed-core:0.45.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.45.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.45.0")
     
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.7.3")
+    // Пароль
+    implementation("at.favre.lib:bcrypt:0.10.2")
     
-    testImplementation("io.ktor:ktor-server-test-host:2.3.6")
-    testImplementation("org.jetbrains.kotlin:kotlin-test:1.9.0")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
 }
 
-kotlin {
-    jvmToolchain(17)
+application {
+    mainClass.set("ApplicationKt")
 }
