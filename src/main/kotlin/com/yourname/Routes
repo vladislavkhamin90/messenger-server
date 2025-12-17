@@ -1,0 +1,149 @@
+import at.favre.lib.crypto.bcrypt.BCrypt
+import io.ktor.http.*
+import io.ktor.server.application.*
+import io.ktor.server.request.*
+import io.ktor.server.response.*
+import io.ktor.server.routing.*
+import org.jetbrains.exposed.sql.*
+import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
+import java.util.*
+
+fun Application.configureRouting() {
+    routing {
+        // Регистрация
+        post("/register") {
+            val request = call.receive<RegisterRequest>()
+            
+            // Проверка существования пользователя
+            val existingUser = transaction {
+                Users.select { Users.email eq request.email }.firstOrNull()
+            }
+            
+            if (existingUser != null) {
+                call.respond(HttpStatusCode.Conflict, "Пользователь уже существует")
+                return@post
+            }
+            
+            // Хеширование пароля
+            val passwordHash = BCrypt.withDefaults().hashToString(12, request.password.toCharArray())
+            
+            // Сохранение пользователя
+            val userId = UUID.randomUUID().toString()
+            transaction {
+                Users.insert {
+                    it[id] = userId
+                    it[username] = request.username
+                    it[email] = request.email
+                    it[passwordHash] = passwordHash
+                }
+            }
+            
+            call.respond(HttpStatusCode.Created, 
+                UserResponse(userId, request.username, request.email))
+        }
+        
+        // Вход (упрощенный - без JWT)
+        post("/login") {
+            val request = call.receive<LoginRequest>()
+            
+            val user = transaction {
+                Users.select { Users.email eq request.email }
+                    .map { 
+                        User(
+                            id = it[Users.id],
+                            username = it[Users.username],
+                            email = it[Users.email],
+                            passwordHash = it[Users.passwordHash]
+                        )
+                    }.firstOrNull()
+            }
+            
+            if (user == null || !BCrypt.verifyer().verify(
+                    request.password.toCharArray(),
+                    user.passwordHash.toCharArray()
+                ).verified) {
+                call.respond(HttpStatusCode.Unauthorized, "Неверный email или пароль")
+                return@post
+            }
+            
+            // В реальном приложении здесь генерируется JWT токен
+            val fakeToken = "user-${user.id}"
+            
+            call.respond(AuthResponse(
+                token = fakeToken,
+                user = UserResponse(user.id, user.username, user.email)
+            ))
+        }
+        
+        // Заметки (требуется аутентификация)
+        route("/notes") {
+            // Получить все заметки пользователя
+            get {
+                val userId = call.request.queryParameters["userId"] 
+                    ?: return@get call.respond(HttpStatusCode.BadRequest, "userId required")
+                
+                val notes = transaction {
+                    Notes.select { Notes.userId eq userId }
+                        .orderBy(Notes.updatedAt, SortOrder.DESC)
+                        .map {
+                            Note(
+                                id = it[Notes.id],
+                                userId = it[Notes.userId],
+                                title = it[Notes.title],
+                                content = it[Notes.content],
+                                createdAt = it[Notes.createdAt],
+                                updatedAt = it[Notes.updatedAt]
+                            )
+                        }
+                }
+                
+                call.respond(notes)
+            }
+            
+            // Создать заметку
+            post {
+                val note = call.receive<Note>()
+                
+                transaction {
+                    Notes.insert {
+                        it[id] = note.id
+                        it[userId] = note.userId
+                        it[title] = note.title
+                        it[content] = note.content
+                        it[createdAt] = note.createdAt
+                        it[updatedAt] = note.updatedAt
+                    }
+                }
+                
+                call.respond(HttpStatusCode.Created, note)
+            }
+            
+            // Обновить заметку
+            put("/{id}") {
+                val noteId = call.parameters["id"] ?: return@put call.respond(HttpStatusCode.BadRequest)
+                val updatedNote = call.receive<Note>()
+                
+                transaction {
+                    Notes.update({ Notes.id eq noteId }) {
+                        it[title] = updatedNote.title
+                        it[content] = updatedNote.content
+                        it[updatedAt] = System.currentTimeMillis()
+                    }
+                }
+                
+                call.respond(HttpStatusCode.OK)
+            }
+            
+            // Удалить заметку
+            delete("/{id}") {
+                val noteId = call.parameters["id"] ?: return@delete call.respond(HttpStatusCode.BadRequest)
+                
+                transaction {
+                    Notes.deleteWhere { Notes.id eq noteId }
+                }
+                
+                call.respond(HttpStatusCode.OK)
+            }
+        }
+    }
+}
