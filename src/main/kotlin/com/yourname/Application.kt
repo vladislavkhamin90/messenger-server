@@ -16,6 +16,7 @@ import kotlinx.coroutines.channels.Channel
 import java.time.Duration
 import java.util.*
 
+// Data classes
 data class User(
     val id: String,
     val username: String,
@@ -46,6 +47,7 @@ data class WebSocketMessage(
     val timestamp: Long = System.currentTimeMillis()
 )
 
+// In-memory хранилище
 object ChatRepository {
     private val messages = mutableListOf<ChatMessage>()
     private val connections = mutableMapOf<String, WebSocketSession>()
@@ -178,10 +180,11 @@ fun Application.module() {
             call.respondText("OK")
         }
 
+        // Регистрация
         post("/register") {
             try {
                 val request = call.receive<RegisterRequest>()
-                //!!!!!!!!!
+                
                 if (request.username.isEmpty() || request.email.isEmpty() || request.password.isEmpty()) {
                     call.respond(RegisterResponse(false, "Все поля обязательны"))
                     return@post
@@ -208,6 +211,7 @@ fun Application.module() {
             }
         }
 
+        // Вход
         post("/login") {
             try {
                 val request = call.receive<LoginRequest>()
@@ -246,6 +250,7 @@ fun Application.module() {
             }
         }
 
+        // Получение списка пользователей
         get("/users") {
             val token = call.request.headers["Authorization"]?.removePrefix("Bearer ") ?: ""
             val username = UserRepository.getUsernameByToken(token)
@@ -259,6 +264,7 @@ fun Application.module() {
             }
         }
 
+        // Получение истории сообщений
         get("/messages/{userId}") {
             val token = call.request.headers["Authorization"]?.removePrefix("Bearer ") ?: ""
             val currentUsername = UserRepository.getUsernameByToken(token)
@@ -287,6 +293,7 @@ fun Application.module() {
             println("📨 Запрошена история сообщений между ${currentUser.username} и ${otherUser.username} (${messages.size} сообщений)")
         }
 
+        // WebSocket endpoint для чата
         webSocket("/chat") {
             val token = call.request.queryParameters["token"] ?: ""
             val username = UserRepository.getUsernameByToken(token)
@@ -303,9 +310,11 @@ fun Application.module() {
                 return@webSocket
             }
 
+            // Добавляем подключение
             ChatRepository.addConnection(user.id, this)
             
             try {
+                // Отправляем приветственное сообщение
                 val welcomeMessage = WebSocketMessage(
                     type = "connected",
                     from = "server",
@@ -315,6 +324,7 @@ fun Application.module() {
                 
                 println("✅ Пользователь $username (${user.id}) подключился к WebSocket")
 
+                // Запускаем корутину для отправки сообщений пользователю
                 val sendChannel = launch {
                     val userChannel = ChatRepository.userChannels[user.id]
                     if (userChannel != null) {
@@ -330,19 +340,22 @@ fun Application.module() {
                     }
                 }
 
+                // Обрабатываем входящие сообщения
                 for (frame in incoming) {
                     if (frame is Frame.Text) {
                         try {
                             val text = frame.readText()
                             println("📨 Получено сообщение от $username: $text")
                             
-                            val messageJson = kotlinx.serialization.json.Json.parseToJsonElement(text)
-                            val to = messageJson.jsonObject["to"]?.jsonPrimitive?.content
-                            val content = messageJson.jsonObject["content"]?.jsonPrimitive?.content
+                            // Простой парсинг JSON
+                            val json = parseSimpleJson(text)
+                            val to = json["to"]
+                            val content = json["content"]
                             
                             if (to != null && content != null) {
                                 val receiver = UserRepository.getUserById(to)
                                 if (receiver != null) {
+                                    // Сохраняем сообщение
                                     val chatMessage = ChatMessage(
                                         senderId = user.id,
                                         receiverId = receiver.id,
@@ -350,6 +363,7 @@ fun Application.module() {
                                     )
                                     ChatRepository.addMessage(chatMessage)
                                     
+                                    // Отправляем получателю
                                     val wsMessage = WebSocketMessage(
                                         type = "message",
                                         from = user.username,
@@ -357,6 +371,7 @@ fun Application.module() {
                                         content = content
                                     )
                                     
+                                    // Проверяем, подключен ли получатель
                                     if (ChatRepository.getConnection(receiver.id) != null) {
                                         ChatRepository.sendMessageToUser(receiver.id, wsMessage)
                                         println("📤 Сообщение отправлено пользователю ${receiver.username}")
@@ -364,6 +379,7 @@ fun Application.module() {
                                         println("⚠️ Пользователь ${receiver.username} не подключен к WebSocket")
                                     }
                                     
+                                    // Отправляем подтверждение отправителю
                                     val confirmation = WebSocketMessage(
                                         type = "message_sent",
                                         from = "server",
@@ -391,8 +407,39 @@ fun Application.module() {
     }
 }
 
+// Простая функция для парсинга JSON
+fun parseSimpleJson(jsonString: String): Map<String, String?> {
+    val result = mutableMapOf<String, String?>()
+    try {
+        val cleanJson = jsonString.trim().removeSurrounding("{", "}")
+        val pairs = cleanJson.split(",")
+        
+        for (pair in pairs) {
+            val keyValue = pair.split(":", limit = 2)
+            if (keyValue.size == 2) {
+                var key = keyValue[0].trim().removeSurrounding("\"")
+                var value = keyValue[1].trim()
+                
+                if (value.startsWith("\"") && value.endsWith("\"")) {
+                    value = value.removeSurrounding("\"")
+                } else if (value == "null") {
+                    value = null
+                }
+                
+                result[key] = value
+            }
+        }
+    } catch (e: Exception) {
+        println("Ошибка парсинга JSON: ${e.message}")
+    }
+    return result
+}
+
+// Функции расширения для сериализации
 fun WebSocketMessage.toJson(): String {
-    return """{"type":"$type","from":"$from","to":${to?.let { "\"$it\"" } ?: "null"},"content":"$content","timestamp":$timestamp}"""
+    val toJson = to?.let { "\"$it\"" } ?: "null"
+    val escapedContent = content.replace("\"", "\\\"")
+    return """{"type":"$type","from":"$from","to":$toJson,"content":"$escapedContent","timestamp":$timestamp}"""
 }
 
 fun main() {
