@@ -19,8 +19,14 @@ dependencies {
     implementation("ch.qos.logback:logback-classic:1.4.14")
     
     implementation("at.favre.lib:bcrypt:0.10.2")
+    implementation("org.postgresql:postgresql:42.7.2")
+    
+    implementation("org.jetbrains.exposed:exposed-core:0.45.0")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.45.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.45.0")
 }
 
 application {
     mainClass.set("ApplicationKt")
 }
+
