@@ -1,25 +1,21 @@
-// Database.kt
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.transactions.transaction
 
-// Таблица пользователей (как лист в блокноте)
 object Users : Table() {
-    val id = varchar("id", 36)  // ID пользователя
-    val username = varchar("username", 50)  // Имя
-    val email = varchar("email", 100)  // Email
-    val passwordHash = varchar("password_hash", 100)  // Пароль (зашифрованный)
+    val id = varchar("id", 36) 
+    val username = varchar("username", 50) 
+    val email = varchar("email", 100) 
+    val passwordHash = varchar("password_hash", 100)
     
     init {
-        // Делаем email уникальным
         uniqueIndex("unique_email", email)
     }
 }
 
-// Таблица заметок (второй лист в блокноте)
 object Notes : Table() {
-    val id = varchar("id", 36)  // ID заметки
-    val userId = varchar("user_id", 36)  // Кто создал
-    val title = varchar("title", 200)  // Заголовок
-    val content = text("content")  // Текст заметки
-    val createdAt = long("created_at")  // Когда создана
+    val id = varchar("id", 36) 
+    val userId = varchar("user_id", 36) 
+    val title = varchar("title", 200)
+    val content = text("content")
+    val createdAt = long("created_at")
 }
